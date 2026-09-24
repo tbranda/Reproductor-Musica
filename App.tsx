@@ -31,7 +31,7 @@ export default function App() {
   }
 
   function handlePause() {
-    status.isPlaying === true ? player.pause() : player.play();
+    status.playing === true ? player.pause() : player.play();
   }
 
   async function handleSearch() {
@@ -74,7 +74,11 @@ export default function App() {
             <View style={styles.trackRow}>
               <Image source={{ uri: item.artwork }} style={styles.artwork} />
               <View style={{ flex: 1 }}>
-                <Text numberOfLines={1} style={styles.trackTitle}>
+                <Text numberOfLines={1} 
+                  style={[
+                    styles.trackTitle, 
+                    currentTrack?.id === item.id && status.playing && styles.currentTrack
+                  ]}>
                   {item.title}
                 </Text>
                 <Text numberOfLines={1}>{item.artist}</Text>
@@ -90,16 +94,16 @@ export default function App() {
             style={styles.miniArtwork}
           />
           <View style={styles.playerInfo}>
-            <Text numberOfLines={1} style={styles.playerTitle}>
+            <Text numberOfLines={1} style={styles.PlayerTitle}>
               {currentTrack.title}
             </Text>
-            <Text numberOfLines={1} style={styles.playerArtist}>
+            <Text numberOfLines={1} style={styles.PlayerArtist}>
               {currentTrack.artist}
             </Text>
           </View>
           <Pressable style={styles.playButton} onPress={handlePause}>
-            <Text style={styles.playButtonText}>
-              {status.isPlaying ? "Pausa" : "Play"}
+            <Text style={styles.PlayButtonText}>
+              {status.playing ? "Pausa" : "Play"}
             </Text>
           </Pressable>
         </View>
@@ -124,51 +128,71 @@ const styles = StyleSheet.create({
     width: "100%",
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderRadius: 18,
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   list: {
     width: "100%",
-    marginTop: 16,
+    marginTop: 10,
   },
   trackRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 10,
+    marginVertical: 14,
   },
   artwork: {
-    width: 50,
-    height: 50,
-    marginRight: 10,
+    width: 66,
+    height: 66,
+    marginRight: 12,
   },
   trackTitle: {
-    fontWeight: "600",
+    fontWeight: "bold",
   },
   playerBar:{ 
     position: 'absolute', 
-    bottom: 0, 
+    bottom: 48, 
     left: 0, 
     right: 0, 
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: '#181818', 
-    padding: 12, 
+    backgroundColor: '#252525', 
+    padding: 10, 
     borderTopWidth: 1, 
-    borderTopColor: '#333'
+    borderTopColor: '#333',
   },
   miniArtwork: {
-    width: 42,
-    height: 42,
+    width: 52,
+    height: 52,
+    borderRadius: 8,
+    marginBottom: 8,
   },
   playerInfo: {
     flex: 1,
   },
   playButton:{
     backgroundColor: '#49acee',
+    borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
+  },
+  PlayerTitle:{
+    color: '#fff',
+    fontWeight: '600',
+    paddingBottom: 4,
+    left: 10,
+  },
+  PlayerArtist:{
+    color: '#ffff',
+    left: 10,
+  },
+  PlayButtonText:{
+    color: '#fff',
+    fontWeight: '600',
+  },
+  currentTrack:{
+    color: "#32b817",
   }
 
 });
