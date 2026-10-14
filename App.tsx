@@ -1,18 +1,12 @@
 import { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  FlatList,
-  Image,
-  ActivityIndicator,
-  Pressable,
-} from "react-native";
+import { StyleSheet, View, FlatList, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import type { Track } from "./src/types/track";
-import { searchDeezerTracks } from "./src/services/dezeerApi";
+import { searchAudiusTracks } from "./src/services/audiusApi";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import SearchBar from "./src/components/SearchBar";
+import TrackItem from "./src/components/TrackItem";
+import MiniPlayer from "./src/components/MiniPlayer";
 
 export default function App() {
   const [query, setQuery] = useState<string>("");
@@ -24,14 +18,14 @@ export default function App() {
   const player = useAudioPlayer(currentTrack ? currentTrack.uri : null);
   const status = useAudioPlayerStatus(player);
 
-  function handleSelectTrack(track: Track) {
+  const handleSelectTrack = (track: Track) => {
     setCurrentTrack(track);
     player.replace(track.uri);
     player.play();
-  }
+  };
 
   function handlePause() {
-    status.isPlaying === true ? player.pause() : player.play();
+    status.playing === true ? player.pause() : player.play();
   }
 
   async function handleSearch() {
@@ -44,7 +38,7 @@ export default function App() {
     setIsLoading(true);
 
     try {
-      const results = await searchDeezerTracks(trimmedQuery);
+      const results = await searchAudiusTracks(query.trim());
       setTracks(results);
     } finally {
       setIsLoading(false);
@@ -53,14 +47,10 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Buscar música</Text>
-      <TextInput
-        style={styles.input}
+      <SearchBar
         value={query}
         onChangeText={setQuery}
-        onSubmitEditing={handleSearch}
-        placeholder="Escribí una canción o artista"
-        returnKeyType="search"
+        onSubmit={handleSearch}
       />
       {isLoading && <ActivityIndicator color="#1DB954" size="large" />}
       <StatusBar style="auto" />
@@ -68,41 +58,21 @@ export default function App() {
         style={styles.list}
         data={tracks}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 80}}
+        contentContainerStyle={{ paddingBottom: 80 }}
         renderItem={({ item }) => (
-          <Pressable onPress={() => handleSelectTrack(item)}>
-            <View style={styles.trackRow}>
-              <Image source={{ uri: item.artwork }} style={styles.artwork} />
-              <View style={{ flex: 1 }}>
-                <Text numberOfLines={1} style={styles.trackTitle}>
-                  {item.title}
-                </Text>
-                <Text numberOfLines={1}>{item.artist}</Text>
-              </View>
-            </View>
-          </Pressable>
+          <TrackItem
+            track={item}
+            isActive={currentTrack?.id === item.id && Boolean(status.playing)}
+            onSelect={() => handleSelectTrack(item)}
+          />
         )}
       />
       {currentTrack !== null && (
-        <View style={styles.playerBar}>
-          <Image
-            source={{ uri: currentTrack.artwork }}
-            style={styles.miniArtwork}
-          />
-          <View style={styles.playerInfo}>
-            <Text numberOfLines={1} style={styles.playerTitle}>
-              {currentTrack.title}
-            </Text>
-            <Text numberOfLines={1} style={styles.playerArtist}>
-              {currentTrack.artist}
-            </Text>
-          </View>
-          <Pressable style={styles.playButton} onPress={handlePause}>
-            <Text style={styles.playButtonText}>
-              {status.isPlaying ? "Pausa" : "Play"}
-            </Text>
-          </Pressable>
-        </View>
+        <MiniPlayer
+          currentTrack={currentTrack}
+          isPlaying={status.playing}
+          onTogglePlayPause={handlePause}
+        />
       )}
     </View>
   );
@@ -111,9 +81,9 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    padding: 20,
-    paddingTop: 60,
+    backgroundColor: "#121212",
+    paddingHorizontal: 16,
+    paddingTop: 50,
   },
   title: {
     fontSize: 24,
@@ -124,51 +94,70 @@ const styles = StyleSheet.create({
     width: "100%",
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderRadius: 18,
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   list: {
     width: "100%",
-    marginTop: 16,
+    marginTop: 8,
   },
   trackRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 10,
+    marginVertical: 14,
   },
   artwork: {
-    width: 50,
-    height: 50,
-    marginRight: 10,
+    width: 66,
+    height: 66,
+    marginRight: 12,
   },
   trackTitle: {
-    fontWeight: "600",
+    fontWeight: "bold",
   },
-  playerBar:{ 
-    position: 'absolute', 
-    bottom: 0, 
-    left: 0, 
-    right: 0, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#181818', 
-    padding: 12, 
-    borderTopWidth: 1, 
-    borderTopColor: '#333'
+  playerBar: {
+    position: "absolute",
+    bottom: 48,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#252525",
+    padding: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#333",
   },
   miniArtwork: {
-    width: 42,
-    height: 42,
+    width: 52,
+    height: 52,
+    borderRadius: 8,
+    marginBottom: 8,
   },
   playerInfo: {
     flex: 1,
   },
-  playButton:{
-    backgroundColor: '#49acee',
+  playButton: {
+    backgroundColor: "#49acee",
+    borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
-  }
-
+  },
+  PlayerTitle: {
+    color: "#fff",
+    fontWeight: "600",
+    paddingBottom: 4,
+    left: 10,
+  },
+  PlayerArtist: {
+    color: "#ffff",
+    left: 10,
+  },
+  PlayButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  currentTrack: {
+    color: "#32b817",
+  },
 });
